@@ -2,6 +2,9 @@ import
     mininim,
     mininim/dic
 
+export
+    dic
+
 type
     CommandHook = proc(app: var App): int {. cdecl  .}
 
