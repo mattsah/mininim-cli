@@ -1,13 +1,19 @@
 import
     mininim,
-    mininim/dic
+    mininim/dic,
+    std/parseopt
 
 export
     dic
 
 type
-    CommandHook = proc(app: var App): int {. cdecl  .}
+    CommandHook = proc(app: var App): int {. cdecl .}
+    CommandConcept* = concept x
+        x.execute(var App) is int
 
+#[
+## Command
+]#
 class Command of Facet:
     var
         name*: string
@@ -20,13 +26,23 @@ shape Command: @[
         call: proc(app: var App): int =
             let command = app.get(Command)
 
+            doAssert(
+                Command is CommandConcept,
+                "Failed to implement required fields and methods"
+            )
+
             result = command.execute(app)
     )
 ]
 
+#[
+## Console
+]#
 class Console:
     var
-        app: App
+        app*: App
+        args*: seq[string]
+        opts*: Table[string, string]
 
     method build*(app: var App): Console {. static .} =
         result = Console.init(app)
@@ -37,13 +53,22 @@ class Console:
     method run*(): int =
         result = 0
 
-        let commands = this.app.config.findAll(Command)
+        for kind, key, val in getopt():
+            case kind
+                of cmdArgument:
+                    this.args.add(key)
+                of cmdLongOption, cmdShortOption:
+                    this.opts[key] = val
+                of cmdEnd:
+                    discard
 
-        for command in commands:
-            if command.name == "":
+        if this.args.len > 0:
+            let command = this.app.config.findOne(Command, (name: this.args[0]))
+
+            if command != nil:
                 result = cast[CommandHook](command.hook)(this.app)
 
-
 shape Console: @[
+#    Shared(),
     Delegate()
 ]
