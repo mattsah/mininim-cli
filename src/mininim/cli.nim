@@ -21,13 +21,13 @@ type
     CommandConcept* = concept x
 
 begin Command:
-    method execute(this: Command, console: var Console): int =
+    method execute(console: var Console): int =
         discard
 
 shape Command: @[
     Hook(
         call: proc(console: var Console): int =
-            let command = console.app.get(Command)
+            var command = console.app.get(Command)
 
             doAssert(
                 Command is CommandConcept,
@@ -39,10 +39,10 @@ shape Command: @[
 ]
 
 begin Console:
-    method init*(this: var Console, app: var App): void =
+    method init*(app: var App): void =
         this.app = app
 
-    method run*(this: var Console): int =
+    method run*(): int =
         result = 0
 
         for kind, key, val in getopt():
@@ -60,8 +60,8 @@ begin Console:
             if command != nil:
                 result = cast[CommandHook](command.hook)(this)
 
-    proc build*(self: typedesc[Console], app: var App): Console =
-        result = Console.init(app)
+    proc build*(app: var App): self {. static .} =
+        result = self.init(app)
 
 shape Console: @[
     Shared(),
