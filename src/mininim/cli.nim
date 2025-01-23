@@ -4,7 +4,7 @@ import
     std/parseopt
 
 export
-    dic
+    dic # required since our hook calls `app.get`
 
 type
     Command* = ref object of Facet
