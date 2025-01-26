@@ -21,7 +21,7 @@ type
     CommandConcept* = concept x
 
 begin Command:
-    method execute(console: var Console): int =
+    method execute(console: var Console): int {. base .} =
         discard
 
 shape Command: @[
@@ -39,10 +39,10 @@ shape Command: @[
 ]
 
 begin Console:
-    method init*(app: var App): void =
+    method init*(app: var App): void {. base .} =
         this.app = app
 
-    method run*(): int =
+    method run*(): int {. base .} =
         result = 0
 
         for kind, key, val in getopt():
@@ -60,10 +60,10 @@ begin Console:
             if command != nil:
                 result = cast[CommandHook](command.hook)(this)
 
-    proc build*(app: var App): self {. static .} =
-        result = self.init(app)
-
 shape Console: @[
     Shared(),
-    Delegate()
+    Delegate(
+        hook: proc(app: var App): Console =
+            result = Console.init(app)
+    )
 ]
