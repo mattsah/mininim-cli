@@ -16,18 +16,17 @@ type
         args*: seq[string]
         opts*: Table[string, string]
 
-    CommandHook = proc(console: var Console): int {. cdecl .}
-
+    CommandHook = proc(console: Console): int {. nimcall .}
     CommandConcept* = concept x
 
 begin Command:
-    method execute(console: var Console): int {. base .} =
+    method execute(console: Console): int {. base .} =
         discard
 
 shape Command: @[
     Hook(
-        call: proc(console: var Console): int =
-            var command = console.app.get(Command)
+        call: proc(console: Console): int =
+            let command = console.app.get(Command)
 
             doAssert(
                 Command is CommandConcept,
@@ -39,7 +38,7 @@ shape Command: @[
 ]
 
 begin Console:
-    method init*(app: var App): void {. base .} =
+    method init*(app: App): void {. base, mutator .} =
         this.app = app
 
     method run*(): int {. base .} =
@@ -55,7 +54,8 @@ begin Console:
                     discard
 
         if this.args.len > 0:
-            let command = this.app.config.findOne(Command, (name: this.args[0]))
+            let
+                command = this.app.config.findOne(Command, (name: this.args[0]))
 
             if command != nil:
                 result = cast[CommandHook](command.hook)(this)
@@ -63,7 +63,7 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        hook: proc(app: var App): Console =
+        hook: proc(app: App): Console =
             result = Console.init(app)
     )
 ]
