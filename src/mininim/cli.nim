@@ -11,6 +11,8 @@ type
         name*: string
         description*: string
 
+    Process* = ref object of Class
+
     Console* = ref object of Class
         app*: App
         args*: seq[string]
@@ -19,21 +21,22 @@ type
     CommandHook = proc(console: Console): int {. nimcall .}
     CommandConcept* = concept x
 
-begin Command:
+begin Process:
     method execute(console: Console): int {. base .} =
         discard
 
 shape Command: @[
     Hook(
+        swap: Process,
         call: proc(console: Console): int =
-            let command = console.app.get(Command)
+            let process = console.app.get(Process)
 
             doAssert(
                 Command is CommandConcept,
                 "Failed to implement required fields and methods"
             )
 
-            result = command.execute(console)
+            result = process.execute(console)
     )
 ]
 
