@@ -13,10 +13,10 @@ type
         description*: string = "No description available"
 
     Opt* = object
-        long*: string
-        short*: string
+        name*: string
+        flag*: string
         values*: seq[string]
-        require*: bool = false
+        default*: string
         description*: string = "No description available"
 
     Command* = ref object of Facet
@@ -31,6 +31,7 @@ type
         app*: App
         args*: seq[string]
         opts*: Table[string, string]
+        command: Command
 
     CommandHook = proc(console: Console): int {. nimcall .}
     CommandConcept* = concept x
@@ -55,10 +56,19 @@ shape Command: @[
 ]
 
 begin Console:
+    #[
+        Constructor
+    ]#
     method init*(app: App): void {. base, mutator .} =
         this.app = app
 
+    #[
+        Get the general help message
+    ]#
     method help() {. base .} =
+        var
+            commands = this.app.config.findall(Command)
+
         echo unindent(
             fmt """
 
@@ -72,9 +82,6 @@ begin Console:
             """
         )
 
-        var
-            commands = this.app.config.findall(Command)
-
         commands.sort(
             proc(a: Command, b: Command): int =
                 result = cmp(a.name, b.name)
@@ -85,6 +92,9 @@ begin Console:
 
         echo ""
 
+    #[
+        Get the help for an individual command
+    ]#
     method help(command: Command): void {. base .} =
         var
             defs: seq[string]
@@ -93,11 +103,11 @@ begin Console:
         for opt in command.opts:
             optDef = ""
 
-            if opt.require:
-                if bool opt.short.len:
-                    optDef = fmt "-{opt.short}"
+            if not bool opt.default.len:
+                if bool opt.flag.len:
+                    optDef = fmt "-{opt.flag}"
                 else:
-                    optDef = fmt "--{opt.long}"
+                    optDef = fmt "--{opt.name}"
 
                 if bool opt.values.len:
                     optDef.add(":")
@@ -122,30 +132,97 @@ begin Console:
         for opt in command.opts:
             optDef = ""
 
-            if bool opt.short.len:
-                optDef.add(fmt "-{opt.short}")
+            if bool opt.flag.len:
+                optDef.add(fmt "-{opt.flag}")
 
-                if bool opt.long.len:
+                if bool opt.name.len:
                     optDef.add(", ")
             else:
                 optDef.add("    ")
 
-            if bool opt.long.len:
-                optDef.add(fmt "--{opt.long}")
+            if bool opt.name.len:
+                optDef.add(fmt "--{opt.name}")
 
             echo fmt """{optDef.alignLeft(20)} {opt.description}"""
 
         echo ""
 
     #[
-        Check whether or not an option was passed
+        Gets an argument that was passed as it relates to a given command
     ]#
-    method hasOpt(names: varargs[string]): bool {. base .} =
+    method getArg(command: Command, name: string): string {. base .} =
+        result = ""
+
+        for i, arg in command.args:
+            if arg.name == name:
+                if this.args.len > i:
+                    result = this.args[i + 1]
+                    break
+
+    #[
+        Gets an argument that was passed as it relates to the current command
+    ]#
+    method getArg*(name: string): string {. base .} =
+        return this.getArg(this.command, name)
+
+    #[
+        Get an option that was passed as it relates to a given command
+    ]#
+    method getOpt(command: Command, names: varargs[string]): string {. base .} =
+        result = ""
+
+        for name in names:
+            if this.opts.hasKey(name):
+                result = this.opts[name]
+                break
+            else:
+                for opt in command.opts:
+                    if name == opt.flag or name == opt.name:
+                        result = opt.default
+                        break
+
+    #[
+        Get an option that was passed as it relates to a given command
+    ]#
+    method getOpt*(names: varargs[string]): string {. base .} =
+        return this.getOpt(this.command, names)
+
+    #[
+        Check whether or not an argument was passed as it relates to a given command
+    ]#
+    method hasArg(command: Command, name: string): bool {. base .} =
+        result = false
+
+        for i, arg in command.args:
+            if arg.name == name:
+                result = this.args.len > i + 1
+                break
+
+    #[
+        Check whether or not an option was passed as it relates to a given command
+    ]#
+    method hasOpt(command: Command, names: varargs[string]): bool {. base .} =
         result = false
 
         for name in names:
             if this.opts.hasKey(name):
-                return true
+                result = true
+                break
+
+    #[
+        Check whether or not the console call is valid for a given command
+    ]#
+    method isValid(command: Command): bool {. base .} =
+        result = true
+
+        if this.hasOpt(command, "h", "help"):
+            result = false
+        else:
+            for arg in command.args:
+                if arg.require and not this.hasArg(command, arg.name):
+                    echo fmt "Argument [{arg.name}] is required, but was not provided."
+                    result = false
+
 
     #[
         Run the console
@@ -167,10 +244,11 @@ begin Console:
                 command = this.app.config.findOne(Command, (name: this.args[0]))
 
             if command != nil:
-                if this.hasOpt("h", "help"):
+                if not this.isValid(command):
                     this.help(command)
                 else:
-                    result = cast[CommandHook](command.hook)(this)
+                    this.command = command
+                    result       = cast[CommandHook](command.hook)(this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
