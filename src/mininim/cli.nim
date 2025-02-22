@@ -34,21 +34,24 @@ type
         command: Command
 
     CommandHook = proc(console: Console): int {. nimcall .}
-    CommandConcept* = concept x
+    CommandConcept* = concept Process
+        Process.execute(Console) is int
 
 begin Process:
     method execute(console: Console): int {. base .} =
-        discard
+        result = 0
 
 shape Command: @[
     Hook(
         swap: Process,
         call: proc(console: Console): int =
-            let process = console.app.get(Process)
+            let
+                process = console.app.get(Process)
+                class = Process.type.name
 
             doAssert(
-                Command is CommandConcept,
-                "Failed to implement required fields and methods"
+                Process is CommandConcept,
+                fmt """The command {class} is not a valid command."""
             )
 
             result = process.execute(console)
