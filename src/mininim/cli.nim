@@ -105,9 +105,9 @@ begin Console:
 
             if not bool opt.default.len:
                 if bool opt.flag.len:
-                    optDef = fmt "-{opt.flag}"
+                    optDef = fmt """-{opt.flag}"""
                 else:
-                    optDef = fmt "--{opt.name}"
+                    optDef = fmt """--{opt.name}"""
 
                 if bool opt.values.len:
                     optDef.add(":")
@@ -173,8 +173,12 @@ begin Console:
 
         for name in names:
             if this.opts.hasKey(name):
-                result = this.opts[name]
+                if bool this.opts[name].len:
+                    result = this.opts[name]
+                else:
+                    result = $true
                 break
+
             else:
                 for opt in command.opts:
                     if name == opt.flag or name == opt.name:
@@ -213,15 +217,31 @@ begin Console:
         Check whether or not the console call is valid for a given command
     ]#
     method isValid(command: Command): bool {. base .} =
-        result = true
+        var
+            errors = 0
+            value: string
 
-        if this.hasOpt(command, "h", "help"):
+        for arg in command.args:
+            if arg.require and not this.hasArg(command, arg.name):
+                inc errors
+                echo fmt """Argument [{arg.name}] is required, but was not provided."""
+
+        for opt in command.opts:
+            if not (bool opt.default.len) and not this.hasOpt(command, opt.flag, opt.name):
+                inc errors
+                echo fmt """Option [{opt.name}] requires a value, but none was provided."""
+
+            if (bool opt.values.len) and this.hasOpt(command, opt.flag, opt.name):
+                value = this.getOpt(command, opt.flag, opt.name)
+
+                if not (value in opt.values):
+                    inc errors
+                    echo fmt """Option [{opt.name}] value of '{value}' is invalid, options: {opt.values.join(", ")}"""
+
+        if bool errors:
             result = false
         else:
-            for arg in command.args:
-                if arg.require and not this.hasArg(command, arg.name):
-                    echo fmt "Argument [{arg.name}] is required, but was not provided."
-                    result = false
+            result = true
 
 
     #[
@@ -244,17 +264,16 @@ begin Console:
                 command = this.app.config.findOne(Command, (name: this.args[0]))
 
             if command != nil:
-                if not this.isValid(command):
+                if this.hasOpt(command, "h", "help") or not this.isValid(command):
                     this.help(command)
                 else:
                     this.command = command
-                    result       = cast[CommandHook](command.hook)(this)
+                    result = cast[CommandHook](command.hook)(this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
         else:
             this.help()
-
 
 shape Console: @[
     Shared(),
