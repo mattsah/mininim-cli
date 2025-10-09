@@ -19,13 +19,13 @@ type
         default*: string
         description*: string = "No description available"
 
+    Process* = ref object of Class
+
     Command* = ref object of Facet
         name*: string
         description*: string
         args*: seq[Arg]
         opts*: seq[Opt]
-
-    Process* = ref object of Class
 
     Console* = ref object of Class
         app*: App
@@ -34,8 +34,6 @@ type
         command: Command
 
     CommandHook = proc(console: Console): int {. nimcall .}
-    CommandConcept* = concept Process
-        Process.execute(Console) is int
 
 begin Process:
     method execute(console: Console): int {. base .} =
@@ -47,12 +45,6 @@ shape Command: @[
         call: proc(console: Console): int =
             let
                 process = console.app.get(Process)
-                class = Process.type.name
-
-            doAssert(
-                Process is CommandConcept,
-                fmt """The command {class} is not a valid command."""
-            )
 
             result = process.execute(console)
     )
