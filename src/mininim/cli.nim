@@ -145,20 +145,20 @@ begin Console:
     #[
         Gets an argument that was passed as it relates to a given command
     ]#
-    method getArg(command: Command, name: string): string {. base .} =
-        result = ""
+    method getArg(command: Command, name: string, default: string = ""): string {. base .} =
+        result = default
 
         for i, arg in command.args:
             if arg.name == name:
-                if this.args.len > i:
+                if this.args.len > (i + 1):
                     result = this.args[i + 1]
                     break
 
     #[
         Gets an argument that was passed as it relates to the current command
     ]#
-    method getArg*(name: string): string {. base .} =
-        return this.getArg(this.command, name)
+    method getArg*(name: string, default: string = ""): string {. base .} =
+        return this.getArg(this.command, name, default)
 
     #[
         Get an option that was passed as it relates to a given command
@@ -194,7 +194,7 @@ begin Console:
 
         for i, arg in command.args:
             if arg.name == name:
-                result = this.args.len > i + 1
+                result = this.args.len > (i + 1)
                 break
 
     #[
