@@ -1,7 +1,8 @@
 import
     mininim,
     mininim/dic,
-    std/parseopt
+    std/parseopt,
+    std/os
 
 export
     dic # required since our hook calls `app.get`
@@ -29,6 +30,7 @@ type
 
     Console* = ref object of Class
         app*: App
+        name: string
         args*: seq[string]
         opts*: Table[string, string]
         command: Command
@@ -55,7 +57,8 @@ begin Console:
         Constructor
     ]#
     method init*(app: App): void {. base, mutator .} =
-        this.app = app
+        this.app  = app
+        this.name = os.getAppFilename().split({'/', '\\'})[^1]
 
     #[
         Get the general help message
@@ -67,15 +70,24 @@ begin Console:
         echo unindent(
             fmt """
 
-                Welcome to mininim.
-
-                usage: mininim [command]
+                usage: {this.name} [command]
 
                 {"-h, --help".alignLeft(20)} Get help for the command
-
-                commands:
             """
         )
+
+        if commands.len > 0:
+            echo unindent(
+                fmt """
+                    commands:
+                """
+            )
+        else:
+            echo unindent(
+                fmt """
+                    No commands available.
+                """
+            )
 
         commands.sort(
             proc(a: Command, b: Command): int =
@@ -117,8 +129,7 @@ begin Console:
         echo unindent(
             fmt """
 
-                usage: mininim {command.name} {defs.join(" ")}
-
+                usage: {this.name} {command.name} {defs.join(" ")}
             """
         )
 
