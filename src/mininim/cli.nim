@@ -260,7 +260,7 @@ begin Console:
                     this.help(command)
                 else:
                     this.command = command
-                    result = cast[CommandHook](command.hook)(this)
+                    result = cast[CommandHook](command.call)(this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
@@ -270,7 +270,7 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        hook: proc(app: App): self =
+        call: proc(app: App): self =
             result = self.init(app)
     )
 ]
@@ -281,8 +281,7 @@ begin Process:
 
 shape Command: @[
     Hook(
-        base: Process,
-        hook: proc(console: Console): int =
+        call: proc(console: Console): int =
             let
                 command = console.app.get(self)
 
