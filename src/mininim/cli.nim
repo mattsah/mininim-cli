@@ -20,6 +20,13 @@ type
         default*: string
         description*: string = "No description available"
 
+    Console* = ref object of Class
+        app*: App
+        name: string
+        args*: seq[string]
+        opts*: Table[string, string]
+        command: Command
+
     Process* = ref object of Class
 
     Command* = ref object of Facet
@@ -28,29 +35,8 @@ type
         args*: seq[Arg]
         opts*: seq[Opt]
 
-    Console* = ref object of Class
-        app*: App
-        name: string
-        args*: seq[string]
-        opts*: Table[string, string]
-        command: Command
 
     CommandHook = proc(console: Console): int {. nimcall .}
-
-begin Process:
-    method execute(console: Console): int {. base .} =
-        result = 0
-
-shape Command: @[
-    Hook(
-        swap: Process,
-        call: proc(console: Console): int =
-            let
-                process = console.app.get(Process)
-
-            result = process.execute(console)
-    )
-]
 
 begin Console:
     #[
@@ -284,7 +270,22 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        hook: proc(app: App): Console =
-            result = Console.init(app)
+        hook: proc(app: App): self =
+            result = self.init(app)
+    )
+]
+
+begin Process:
+    method execute(console: Console): int {. base .} =
+        result = 0
+
+shape Command: @[
+    Hook(
+        base: Process,
+        hook: proc(console: Console): int =
+            let
+                command = console.app.get(self)
+
+            result = command.execute(console)
     )
 ]
