@@ -20,6 +20,8 @@ type
         default*: string
         description*: string = "No description available"
 
+    Process* = ref object of Class
+
     Console* = ref object of Class
         app*: App
         name: string
@@ -27,16 +29,17 @@ type
         opts*: Table[string, string]
         command: Command
 
-    Process* = ref object of Class
-
     Command* = ref object of Facet
         name*: string
         description*: string
         args*: seq[Arg]
         opts*: seq[Opt]
 
-
     CommandHook = proc(console: Console): int {. nimcall .}
+
+begin Process:
+    method execute(console: Console): int {. base .} =
+        result = 0
 
 begin Console:
     #[
@@ -260,7 +263,7 @@ begin Console:
                     this.help(command)
                 else:
                     this.command = command
-                    result = cast[CommandHook](command.call)(this)
+                    result = command[CommandHook](this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
@@ -274,10 +277,6 @@ shape Console: @[
             result = self.init(app)
     )
 ]
-
-begin Process:
-    method execute(console: Console): int {. base .} =
-        result = 0
 
 shape Command: @[
     Hook(
