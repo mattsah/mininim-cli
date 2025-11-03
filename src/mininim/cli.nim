@@ -35,7 +35,7 @@ type
         args*: seq[Arg]
         opts*: seq[Opt]
 
-    CommandHook = proc(console: Console): int {. nimcall .}
+    CommandHook = proc(console: Console): int {. closure .}
 
 begin Process:
     method execute(console: Console): int {. base .} =
@@ -45,7 +45,7 @@ begin Console:
     #[
         Constructor
     ]#
-    method init*(app: App): void {. base, mutator .} =
+    method init*(app: App): void {. base, gcsafe, mutator .} =
         this.app  = app
         this.name = os.getAppFilename().split({'/', '\\'})[^1]
 
@@ -263,7 +263,8 @@ begin Console:
                     this.help(command)
                 else:
                     this.command = command
-                    result = command[CommandHook](this)
+
+                    result = CommandHook.value(this.command.call)(this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
@@ -273,16 +274,16 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        call: proc(app: App): self =
-            result = self.init(app)
+        call: proc(): self {. closure .}=
+            result = self.init(this.app)
     )
 ]
 
 shape Command: @[
     Hook(
-        call: proc(console: Console): int =
+        call: proc(console: Console): int  {. closure .} =
             let
-                command = console.app.get(self)
+                command = this.app.get(self)
 
             result = command.execute(console)
     )
