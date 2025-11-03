@@ -274,8 +274,8 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        call: proc(): self {. closure .}=
-            result = self.init(this.app)
+        call: proc(): shape {. closure .}=
+            result = shape.init(this.app)
     )
 ]
 
@@ -283,7 +283,7 @@ shape Command: @[
     Hook(
         call: proc(console: Console): int  {. closure .} =
             let
-                command = this.app.get(self)
+                command = this.app.get(shape)
 
             result = command.execute(console)
     )
