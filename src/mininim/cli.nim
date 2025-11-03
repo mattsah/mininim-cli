@@ -19,6 +19,14 @@ type
         default*: string
         description*: string = "No description available"
 
+    Command* = ref object of Facet
+        name*: string
+        description*: string
+        args*: seq[Arg]
+        opts*: seq[Opt]
+
+    CommandHook = proc(console: Console): int {. closure .}
+
     Process* = ref object of Class
 
     Console* = ref object of Class
@@ -28,17 +36,25 @@ type
         opts*: Table[string, string]
         command: Command
 
-    Command* = ref object of Facet
-        name*: string
-        description*: string
-        args*: seq[Arg]
-        opts*: seq[Opt]
+begin Command:
+    discard
 
-    CommandHook = proc(console: Console): int {. closure .}
+shape Command: @[
+    Hook(
+        call: proc(console: Console): int  {. closure .} =
+            let
+                command = this.app.get(shape)
+
+            result = command.execute(console)
+    )
+]
 
 begin Process:
     method execute(console: Console): int {. base .} =
         result = 0
+
+shape Process: @[
+]
 
 begin Console:
     #[
@@ -278,12 +294,3 @@ shape Console: @[
     )
 ]
 
-shape Command: @[
-    Hook(
-        call: proc(console: Console): int  {. closure .} =
-            let
-                command = this.app.get(shape)
-
-            result = command.execute(console)
-    )
-]
