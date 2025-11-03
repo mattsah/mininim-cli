@@ -1,8 +1,7 @@
 import
     mininim,
     mininim/dic,
-    std/parseopt,
-    std/os
+    std/parseopt
 
 export
     dic # required since our hook calls `app.get`
