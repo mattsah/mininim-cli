@@ -60,7 +60,7 @@ begin Console:
     #[
         Constructor
     ]#
-    method init*(app: App): void {. base, gcsafe, mutator .} =
+    method init*(app: App): void {. base, gcsafe .} =
         this.app  = app
         this.name = os.getAppFilename().split({'/', '\\'})[^1]
 
