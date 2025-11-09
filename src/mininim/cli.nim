@@ -4,7 +4,7 @@ import
     std/parseopt
 
 export
-    dic # required since our hook calls `app.get`
+    dic
 
 type
     Arg* = object
