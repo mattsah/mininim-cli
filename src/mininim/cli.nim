@@ -279,7 +279,7 @@ begin Console:
                 else:
                     this.command = command
 
-                    result = CommandHook.value(this.command.call)(this)
+                    result = command[CommandHook](this)
             else:
                 result = 1
                 echo fmt "Unknown command {this.args[0]}, use --help to list commands."
