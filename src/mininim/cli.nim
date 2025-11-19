@@ -25,7 +25,7 @@ type
         args*: seq[Arg]
         opts*: seq[Opt]
 
-    CommandHook = proc(console: Console): int {. closure .}
+    CommandHook* = proc(console: Console): int
 
     Process* = ref object of Class
 
@@ -41,11 +41,13 @@ begin Command:
 
 shape Command: @[
     Hook(
-        call: proc(console: Console): int  {. closure .} =
-            let
-                command = this.app.get(shape)
+        call: CommandHook as (
+            block:
+                let
+                    command = this.app.get(shape)
 
-            result = command.execute(console)
+                result = command.execute(console)
+        )
     )
 ]
 
@@ -289,8 +291,10 @@ begin Console:
 shape Console: @[
     Shared(),
     Delegate(
-        call: proc(): shape {. closure .}=
-            result = shape.init(this.app)
+        call: DelegateHook as (
+            block:
+                result = shape.init(this.app)
+        )
     )
 ]
 
