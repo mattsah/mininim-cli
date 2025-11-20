@@ -52,7 +52,7 @@ shape Command: @[
 ]
 
 begin Process:
-    method execute(console: Console): int {. base .} =
+    method execute(console: Console): int =
         result = 0
 
 shape Process: @[
@@ -62,14 +62,14 @@ begin Console:
     #[
         Constructor
     ]#
-    method init*(app: App): void {. base, gcsafe .} =
+    method init*(app: App): void =
         this.app  = app
         this.name = os.getAppFilename().split({'/', '\\'})[^1]
 
     #[
         Get the general help message
     ]#
-    method help() {. base .} =
+    method help() =
         var
             commands = this.app.config.findall(Command)
 
@@ -108,7 +108,7 @@ begin Console:
     #[
         Get the help for an individual command
     ]#
-    method help(command: Command): void {. base .} =
+    method help(command: Command): void =
         var
             defs: seq[string]
             optDef: string
@@ -162,7 +162,7 @@ begin Console:
     #[
         Gets an argument that was passed as it relates to a given command
     ]#
-    method getArg(command: Command, name: string, default: string = ""): string {. base .} =
+    method getArg(command: Command, name: string, default: string = ""): string =
         result = default
 
         for i, arg in command.args:
@@ -174,13 +174,13 @@ begin Console:
     #[
         Gets an argument that was passed as it relates to the current command
     ]#
-    method getArg*(name: string, default: string = ""): string {. base .} =
+    method getArg*(name: string, default: string = ""): string =
         return this.getArg(this.command, name, default)
 
     #[
         Get an option that was passed as it relates to a given command
     ]#
-    method getOpt(command: Command, names: varargs[string]): string {. base .} =
+    method getOpt(command: Command, names: varargs[string]): string =
         result = ""
 
         for name in names:
@@ -200,13 +200,13 @@ begin Console:
     #[
         Get an option that was passed as it relates to a given command
     ]#
-    method getOpt*(names: varargs[string]): string {. base .} =
+    method getOpt*(names: varargs[string]): string =
         return this.getOpt(this.command, names)
 
     #[
         Check whether or not an argument was passed as it relates to a given command
     ]#
-    method hasArg(command: Command, name: string): bool {. base .} =
+    method hasArg(command: Command, name: string): bool =
         result = false
 
         for i, arg in command.args:
@@ -217,7 +217,7 @@ begin Console:
     #[
         Check whether or not an option was passed as it relates to a given command
     ]#
-    method hasOpt(command: Command, names: varargs[string]): bool {. base .} =
+    method hasOpt(command: Command, names: varargs[string]): bool =
         result = false
 
         for name in names:
@@ -228,7 +228,7 @@ begin Console:
     #[
         Check whether or not the console call is valid for a given command
     ]#
-    method isValid(command: Command): bool {. base .} =
+    method isValid(command: Command): bool =
         var
             errors = 0
             value: string
@@ -259,7 +259,7 @@ begin Console:
     #[
         Run the console
     ]#
-    method run*(): int {. base .} =
+    method run*(): int =
         result = 0
 
         for kind, key, val in getopt():
@@ -297,4 +297,3 @@ shape Console: @[
         )
     )
 ]
-
