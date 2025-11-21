@@ -30,7 +30,6 @@ type
     Process* = ref object of Class
 
     Console* = ref object of Class
-        app*: App
         name: string
         args*: seq[string]
         opts*: Table[string, string]
@@ -62,8 +61,7 @@ begin Console:
     #[
         Constructor
     ]#
-    method init*(app: App): void =
-        this.app  = app
+    method init*(): void =
         this.name = os.getAppFilename().split({'/', '\\'})[^1]
 
     #[
@@ -293,7 +291,7 @@ shape Console: @[
     Delegate(
         call: DelegateHook as (
             block:
-                result = shape.init(this.app)
+                result = shape.init()
         )
     )
 ]
