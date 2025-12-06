@@ -10,4 +10,4 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 2.2.0"
-requires "https://github.com/primed-cooperative/mininim-core.git"
+requires "https://github.com/primd-cooperative/mininim-core.git"
